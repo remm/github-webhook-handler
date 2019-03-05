@@ -99,6 +99,7 @@ def index():
 
         if repo.get('action', None):
             for action in repo['action']:
+                print('exec', action)
                 subp = subprocess.Popen(action, cwd=repo.get('path', '.'))
                 subp.wait()
         return 'OK'
