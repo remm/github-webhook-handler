@@ -2,7 +2,7 @@
     "remm/github-webhook-handler-test": {
         "path": "/tmp",
         "action": [
-            ["/app/hooks/bi-repo-hook.sh"]
+            ["python3","/app/hooks/bi-repo-webhook.py"]
         ]
     }
 }

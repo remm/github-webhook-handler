@@ -1,44 +1,12 @@
 import github
-import hashlib
 import xml.etree.ElementTree as ET
 
-from os.path import join, exists
-from glob import glob
-from os import listdir
+from os.path import join
 
 REPO_NAME = "github-webhook-handler-test"
 ROOT_REPO_PATH = join("/tmp/", REPO_NAME)
 ANALYTICS_ARTIFACTS_DIR = join(ROOT_REPO_PATH, "wix-bi-dev")
 token = '049140259575365d2299e467c4fd1be81d3696c2'
-
-
-# def find_main_pom_xml():
-#     if exists(join(ANALYTICS_ARTIFACTS_DIR, 'pom.xml')):
-#         return join(ANALYTICS_ARTIFACTS_DIR, 'pom.xml')
-#     else:
-#         return None
-
-
-# def find_deps_with_configs():
-#     all_deps = []
-#     deps = [d for d in listdir(ANALYTICS_ARTIFACTS_DIR)]
-#
-#     for dep in deps:
-#         if glob(join(ANALYTICS_ARTIFACTS_DIR, dep, '*.params')):
-#             all_deps.append(dep)
-#     return all_deps
-
-
-# def find_xml_modules(file_name):
-#     modules = []
-#     parsed_xml = ET.parse(source=file_name, parser=None)
-#     root = parsed_xml.getroot()
-#
-#     for elem in root:
-#         for subelem in elem.findall('./'):
-#             if 'module' in subelem.tag:
-#                 modules.append(subelem.text)
-#     return modules
 
 
 def update_modules_list(file_name, dep):
@@ -98,41 +66,26 @@ def save_content_to_file(content):
 
 
 def update_file_in_repo():
-
     with open("/tmp/pom.xml", "r") as f:
         content = f.read()
 
-    repo = g.get_user().get_repo("github-webhook-handler-test")
+    repo = g.get_user().get_repo(REPO_NAME)
     contents = repo.get_contents("/wix-bi-dev/pom.xml")
-
     repo.update_file(contents.path, "Update modules", content, sha=contents.sha, branch='master')
 
 
 if __name__ == "__main__":
-    # xml_conf = find_main_pom_xml()
-    # defined_deps = set(find_xml_modules(xml_conf))
-    # print('defined modules in xml conf', defined_deps)
-    # modules_w_configs = set(find_deps_with_configs())
-    # print('modules_w_configs', modules_w_configs)
-    #
-    # diff = modules_w_configs.difference(defined_deps)
-    # if diff:
-    #     print('diff is ', diff)
-    #     for dm in diff:
-    #         update_modules_list(xml_conf, dm)
-
     g = github.Github(token)
 
-    repo = g.get_user().get_repo("github-webhook-handler-test")
+    repo = g.get_user().get_repo(REPO_NAME)
     file = repo.get_file_contents("/wix-bi-dev/pom.xml")
     xml_conf_raw_data = file.decoded_content
     save_content_to_file(xml_conf_raw_data)
     defined_deps = set(find_xml_modules(xml_conf_raw_data))
-    print('defined modules in xml conf', defined_deps)
+    print('defined modules in xml conf:', defined_deps)
     modules_w_configs = set(get_all_content_recursively())
-    print('modules_w_configs', modules_w_configs)
-
+    print('modules_w_configs:', modules_w_configs)
     diff = modules_w_configs.difference(defined_deps)
-    # print('diff is ', diff)
+    print('diff', diff)
     update_pom_xml('/tmp/pom.xml', diff)
     update_file_in_repo()
