@@ -1,58 +1,138 @@
-import git
-import os
-from glob import glob
+import github
+import hashlib
 import xml.etree.ElementTree as ET
 
-REPO_NAME = "github-webhook-handler"
-ROOT_REPO_PATH = os.path.join("/tmp/", REPO_NAME)
-ANALYTICS_ARTIFACTS_DIR = os.path.join(ROOT_REPO_PATH, "wix-bi-dev")
+from os.path import join, exists
+from glob import glob
+from os import listdir
+
+REPO_NAME = "github-webhook-handler-test"
+ROOT_REPO_PATH = join("/tmp/", REPO_NAME)
+ANALYTICS_ARTIFACTS_DIR = join(ROOT_REPO_PATH, "wix-bi-dev")
+token = '049140259575365d2299e467c4fd1be81d3696c2'
 
 
-def clone_repo():
-    repo_dir = "/tmp/dir/github-webhook-handler"
-    print('clonning repo')
-    if not os.path.exists(repo_dir):
-        os.makedirs(repo_dir)
-    git.Git(repo_dir).clone(f"git@github.com:remm/{REPO_NAME}.git")
+# def find_main_pom_xml():
+#     if exists(join(ANALYTICS_ARTIFACTS_DIR, 'pom.xml')):
+#         return join(ANALYTICS_ARTIFACTS_DIR, 'pom.xml')
+#     else:
+#         return None
 
 
-def find_main_pom_xml():
-    if os.path.exists(os.path.join(ANALYTICS_ARTIFACTS_DIR, 'pom.xml')):
-        return os.path.join(ANALYTICS_ARTIFACTS_DIR, 'pom.xml')
-    else:
-        return None
+# def find_deps_with_configs():
+#     all_deps = []
+#     deps = [d for d in listdir(ANALYTICS_ARTIFACTS_DIR)]
+#
+#     for dep in deps:
+#         if glob(join(ANALYTICS_ARTIFACTS_DIR, dep, '*.params')):
+#             all_deps.append(dep)
+#     return all_deps
 
 
-def find_all_dependencies():
-    all_deps = []
-    deps = [d for d in os.listdir(ANALYTICS_ARTIFACTS_DIR)]
+# def find_xml_modules(file_name):
+#     modules = []
+#     parsed_xml = ET.parse(source=file_name, parser=None)
+#     root = parsed_xml.getroot()
+#
+#     for elem in root:
+#         for subelem in elem.findall('./'):
+#             if 'module' in subelem.tag:
+#                 modules.append(subelem.text)
+#     return modules
 
-    for dep in deps:
-        if glob(os.path.join(ANALYTICS_ARTIFACTS_DIR, dep, '*.params')):
-            all_deps.append(dep)
-    print('find_all_dependencies: deps', all_deps)
-    return all_deps
 
-
-def check_deps_from_main_pom():
-    project_deps = find_all_dependencies()
-    xml = find_main_pom_xml
-    tree = ET.parse(xml)
+def update_modules_list(file_name, dep):
+    tree = ET.parse(file_name)
+    ET.register_namespace("", "http://maven.apache.org/POM/4.0.0")
     root = tree.getroot()
-    pom_dependencies = root[5]
-    print(root[5].attrib)
-    if len(project_deps) != len(pom_dependencies):
-        print(type(root[5]))
-    else:
-        print('deps are correct')
-    # for pd in pom_dependencies:
-    #     print(pd)
+    modules = root.find('{http://maven.apache.org/POM/4.0.0}modules')
+    child = ET.Element(dep)
+    child.tag = 'module'
+    child.text = dep
+    modules.append(child)
+    tree.write(file_name, xml_declaration=True, encoding="utf-8")
 
 
-def update_main_pom_with_dep():
-    pass
+def find_xml_modules(file_name):
+    modules = []
+    parsed_xml = ET.fromstring(file_name)
+    for elem in parsed_xml:
+        for subelem in elem.findall('./'):
+            if 'module' in subelem.tag:
+                modules.append(subelem.text)
+    return modules
+
+
+def _get_modules_names(lm):
+    names = []
+    for m in lm:
+        names.append(m.split('/')[2].replace('.params', ''))
+    return names
+
+
+def get_all_content_recursively():
+    option_files = []
+    repo = g.get_user().get_repo("github-webhook-handler-test")
+    contents = repo.get_contents("/wix-bi-dev")
+    while contents:
+        file_content = contents.pop(0)
+        if file_content.type == "dir":
+            contents.extend(repo.get_contents(file_content.path))
+        else:
+            if file_content.path.endswith('.params'):
+                option_files.append(file_content.path)
+
+    return _get_modules_names(option_files)
+
+
+def update_pom_xml(raw_file, modules):
+    ml = list(modules)
+    while ml:
+        update_modules_list(raw_file, ml[0])
+        ml.pop(0)
+
+
+def save_content_to_file(content):
+    with open("/tmp/pom.xml", "wb") as f:
+        f.write(content)
+
+
+def update_file_in_repo():
+
+    with open("/tmp/pom.xml", "r") as f:
+        content = f.read()
+
+    repo = g.get_user().get_repo("github-webhook-handler-test")
+    contents = repo.get_contents("/wix-bi-dev/pom.xml")
+
+    repo.update_file(contents.path, "Update modules", content, sha=contents.sha, branch='master')
 
 
 if __name__ == "__main__":
-    defined_deps = check_deps_from_main_pom()
-    print(defined_deps)
+    # xml_conf = find_main_pom_xml()
+    # defined_deps = set(find_xml_modules(xml_conf))
+    # print('defined modules in xml conf', defined_deps)
+    # modules_w_configs = set(find_deps_with_configs())
+    # print('modules_w_configs', modules_w_configs)
+    #
+    # diff = modules_w_configs.difference(defined_deps)
+    # if diff:
+    #     print('diff is ', diff)
+    #     for dm in diff:
+    #         update_modules_list(xml_conf, dm)
+
+    g = github.Github(token)
+
+    repo = g.get_user().get_repo("github-webhook-handler-test")
+    file = repo.get_file_contents("/wix-bi-dev/pom.xml")
+    xml_conf_raw_data = file.decoded_content
+    save_content_to_file(xml_conf_raw_data)
+    defined_deps = set(find_xml_modules(xml_conf_raw_data))
+    print('defined modules in xml conf', defined_deps)
+    modules_w_configs = set(get_all_content_recursively())
+    print('modules_w_configs', modules_w_configs)
+
+    diff = modules_w_configs.difference(defined_deps)
+    # print('diff is ', diff)
+    update_pom_xml('/tmp/pom.xml', diff)
+    update_file_in_repo()
