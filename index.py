@@ -104,6 +104,13 @@ def index():
                 subp.wait()
         return 'OK'
 
+
+@app.route('/health', methods=['GET'])
+def health():
+    """Check the status of this application."""
+    return 'OK'
+
+
 # Check if python version is less than 2.7.7
 if sys.version_info < (2, 7, 7):
     # http://blog.turret.io/hmac-in-go-python-ruby-php-and-nodejs/
