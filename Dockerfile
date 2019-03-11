@@ -5,14 +5,10 @@ ENV VALIDATE_SOURCEIP=false
 WORKDIR /app
 
 COPY requirements.txt /app
-RUN apk add --no-cache git openssh-client bash && \
-    pip install -r requirements.txt
-
-RUN mkdir -p ~/.ssh && ssh-keyscan github.com >> ~/.ssh/known_hosts
+RUN pip install -r requirements.txt
 
 COPY . /app
 
-COPY ./ssh_keys/* /root/.ssh/
 
 EXPOSE 80
 CMD ["python", "index.py"]

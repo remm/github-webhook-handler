@@ -2,28 +2,26 @@ import github
 import xml.etree.ElementTree as ET
 
 from os.path import join, basename, splitext
+from bi_webhook_config import TOKEN
 
 REPO_NAME = "github-webhook-handler-test"
 ROOT_REPO_PATH = join("/tmp/", REPO_NAME)
 ANALYTICS_ARTIFACTS_DIR = join(ROOT_REPO_PATH, "wix-bi-dev")
-token = 'ac7c4b90dd28663f64fda583902294c849a26659'
 
 
 def update_modules_list(xml_struct, modules_list):
-    xml_str = ET.fromstring(xml_conf_raw_data.decode('utf-8'))
+    xml_str = ET.fromstring(xml_struct.decode('utf-8'))
     ET.register_namespace("", "http://maven.apache.org/POM/4.0.0")
     modules = xml_str.find('{http://maven.apache.org/POM/4.0.0}modules')
     for mod in modules_list:
-        xml_el = ET.Element(mod)
-        xml_el.tag = 'module'
-        xml_el.text = mod
+        xml_el = ET.Element(mod, tag='module', text=mod)
         modules.append(xml_el)
-    return ET.tostring(xml_str)
+    return ET.tostring(xml_str, method="xml")
 
 
-def find_xml_modules(file_name):
+def find_xml_modules(xml_struct):
     modules = []
-    parsed_xml = ET.fromstring(file_name)
+    parsed_xml = ET.fromstring(xml_struct)
     for elem in parsed_xml:
         for subelem in elem.findall('./'):
             if 'module' in subelem.tag:
@@ -40,7 +38,7 @@ def _get_modules_names(lm):
 
 def get_all_content_recursively():
     option_files = []
-    repo = g.get_user().get_repo("github-webhook-handler-test")
+    repo = git_hub_obj.get_user().get_repo("github-webhook-handler-test")
     contents = repo.get_contents("/wix-bi-dev")
     while contents:
         file_content = contents.pop(0)
@@ -54,15 +52,14 @@ def get_all_content_recursively():
 
 
 def update_file_in_repo(content):
-    repo = g.get_user().get_repo(REPO_NAME)
+    repo = git_hub_obj.get_user().get_repo(REPO_NAME)
     contents = repo.get_contents("/wix-bi-dev/pom.xml")
     repo.update_file(contents.path, "Update modules", content, sha=contents.sha, branch='master')
 
 
 if __name__ == "__main__":
-    g = github.Github(token)
-
-    repo = g.get_user().get_repo(REPO_NAME)
+    git_hub_obj = github.Github(TOKEN)
+    repo = git_hub_obj.get_user().get_repo(REPO_NAME)
     file = repo.get_file_contents("/wix-bi-dev/pom.xml")
     xml_conf_raw_data = file.decoded_content
     defined_deps = set(find_xml_modules(xml_conf_raw_data))
@@ -72,4 +69,5 @@ if __name__ == "__main__":
     diff = modules_w_configs.difference(defined_deps)
     print('diff', diff)
     updated_xml = update_modules_list(xml_conf_raw_data, diff)
-    update_file_in_repo(updated_xml)
+    if updated_xml != xml_conf_raw_data:
+        update_file_in_repo(updated_xml)
