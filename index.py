@@ -139,7 +139,7 @@ if __name__ == "__main__":
     try:
         port_number = int(sys.argv[1])
     except:
-        port_number = 80
+        port_number = 8080
     if os.environ.get('USE_PROXYFIX', None) == 'true':
         app.wsgi_app = ProxyFix(app.wsgi_app)
     app.run(host='0.0.0.0', port=port_number)
