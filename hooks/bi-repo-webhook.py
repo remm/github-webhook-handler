@@ -2,7 +2,7 @@ import github
 import xml.etree.ElementTree as ET
 
 from os.path import join, basename, splitext
-from bi_webhook_config import TOKEN
+from token import TOKEN
 
 REPO_NAME = "github-webhook-handler-test"
 ROOT_REPO_PATH = join("/tmp/", REPO_NAME)
