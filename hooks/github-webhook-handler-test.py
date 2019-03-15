@@ -4,7 +4,7 @@ import xml.etree.ElementTree as ET
 from os.path import join, basename, splitext
 from token_config import TOKEN
 
-REPO_NAME = "wix-bi-dev"
+REPO_NAME = "github-webhook-handler-test"
 
 
 def update_modules_list(xml_struct, modules_list):
@@ -55,7 +55,7 @@ def update_file_in_repo(repo, content):
 
 if __name__ == "__main__":
     git_hub_obj = github.Github(TOKEN)
-    repo = git_hub_obj.get_user("wix-webhook").get_repo(REPO_NAME)
+    repo = git_hub_obj.get_user("remm").get_repo(REPO_NAME)
     file = repo.get_file_contents("/wix-bi-dev/pom.xml")
     xml_conf_raw_data = file.decoded_content
     defined_deps = set(find_xml_modules(xml_conf_raw_data))

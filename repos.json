@@ -1,8 +1,14 @@
 {
-    "remm/github-webhook-handler-test": {
+    "wix-webhook/wix-bi-dev": {
         "path": "/tmp",
         "action": [
             ["python3","/app/hooks/bi-repo-webhook.py"]
+        ]
+    },
+    "remm/github-webhook-handler-test": {
+        "path": "/tmp",
+        "action": [
+            ["python3","/app/hooks/github-webhook-handler-test.py"]
         ]
     }
 }

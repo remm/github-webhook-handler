@@ -2,6 +2,6 @@
 
 set -a
 
-cp /configs/token.py /app/hooks/token.py
+cp /configs/token_config.py /app/hooks/token_config.py
 
 python index.py
