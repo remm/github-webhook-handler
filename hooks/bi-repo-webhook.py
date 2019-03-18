@@ -1,7 +1,7 @@
 import github
 import xml.etree.ElementTree as ET
 
-from os.path import join, basename, splitext
+from os.path import basename, splitext
 from token_config import TOKEN
 
 REPO_NAME = "wix-bi-dev"
@@ -12,7 +12,9 @@ def update_modules_list(xml_struct, modules_list):
     ET.register_namespace("", "http://maven.apache.org/POM/4.0.0")
     modules = xml_str.find('{http://maven.apache.org/POM/4.0.0}modules')
     for mod in modules_list:
-        xml_el = ET.Element(mod, tag='module', text=mod)
+        xml_el = ET.Element(mod)
+        xml_el.tag = "module"
+        xml_el.text = mod
         modules.append(xml_el)
     return ET.tostring(xml_str, method="xml")
 
@@ -67,3 +69,5 @@ if __name__ == "__main__":
     updated_xml = update_modules_list(xml_conf_raw_data, diff)
     if updated_xml != xml_conf_raw_data:
         update_file_in_repo(repo, updated_xml)
+    else:
+        print('Module list is correct. Nothing to add.')
