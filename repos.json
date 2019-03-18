@@ -1,5 +1,5 @@
 {
-    "wix-webhook/wix-bi-dev": {
+    "wix-private/wix-bi-dev": {
         "path": "/tmp",
         "action": [
             ["python3","/app/hooks/bi-repo-webhook.py"]

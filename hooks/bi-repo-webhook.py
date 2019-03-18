@@ -36,7 +36,7 @@ def _get_modules_names(lm):
 
 def get_all_content_recursively(repo):
     option_files = []
-    contents = repo.get_contents("/wix-bi-dev")
+    contents = repo.get_contents(".")
     while contents:
         file_content = contents.pop(0)
         if file_content.type == "dir":
@@ -55,8 +55,8 @@ def update_file_in_repo(repo, content):
 
 if __name__ == "__main__":
     git_hub_obj = github.Github(TOKEN)
-    repo = git_hub_obj.get_user("wix-webhook").get_repo(REPO_NAME)
-    file = repo.get_file_contents("/wix-bi-dev/pom.xml")
+    repo = git_hub_obj.get_user("wix-private").get_repo(REPO_NAME)
+    file = repo.get_file_contents("pom.xml")
     xml_conf_raw_data = file.decoded_content
     defined_deps = set(find_xml_modules(xml_conf_raw_data))
     print('defined modules in xml conf:', defined_deps)
