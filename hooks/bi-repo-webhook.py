@@ -51,7 +51,7 @@ def get_all_content_recursively(repo):
 
 
 def update_file_in_repo(repo, content):
-    contents = repo.get_contents("/wix-bi-dev/pom.xml")
+    contents = repo.get_contents("pom.xml")
     repo.update_file(contents.path, "Update modules", content, sha=contents.sha, branch='master')
 
 
