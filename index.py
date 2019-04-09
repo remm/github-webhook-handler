@@ -113,7 +113,7 @@ def health():
 
 @app.route('/app-info', methods=['GET'])
 def summary():
-    data = {'text': 'It works.'}
+    data = {'text': 'It works!'}
     response = app.response_class(
         response=json.dumps(data),
         status=200,
